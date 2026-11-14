@@ -10,7 +10,8 @@
    ```
 
 3. The **Release** workflow tests, builds a zip for each Jellyfin line in
-   [`lines.json`](lines.json), and creates a GitHub release with the zips and a
+   [`lines.json`](lines.json) (each holds the plugin DLL, `meta.json` and the
+   `LICENSE`), and creates a GitHub release with the zips and a
    `manifest.json`. It keeps the versions from earlier releases in that manifest.
 
 To try the build without publishing, run **Actions → Release → Run workflow**; it

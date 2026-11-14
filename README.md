@@ -118,4 +118,10 @@ private network addresses, never for a public host.
 
 ## License
 
-[MIT](LICENSE)
+Copyright (C) 2026 FreeStuffCrazy Player contributors.
+
+This plugin is licensed under the [GNU General Public License, version 3](LICENSE).
+It is built against Jellyfin's own libraries (`Jellyfin.Controller` and
+`Jellyfin.Model`), which are GPL-3.0, and runs inside the Jellyfin server. Each
+release zip includes the licence text, and this repository is the corresponding
+source.

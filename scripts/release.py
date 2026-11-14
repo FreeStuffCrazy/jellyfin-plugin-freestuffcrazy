@@ -116,6 +116,7 @@ def main():
                 if not source.is_file():
                     sys.exit(f"{artifact} was not produced for Jellyfin {line['jellyfin']}")
                 archive.write(source, artifact)
+            archive.write(ROOT / "LICENSE", "LICENSE")
             archive.writestr("meta.json", json.dumps(plugin_meta, indent=4, sort_keys=True) + "\n")
         versions.append({
             "version": version,
