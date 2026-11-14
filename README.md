@@ -1,7 +1,7 @@
 # FreeStuffCrazy Player Connector for Jellyfin
 
 A Jellyfin plugin that lets people watch your server from
-[FreeStuffCrazy Player](https://player.freestuffcrazy.com), including from a car
+[FreeStuffCrazy Player](https://player.freestuffcrazy.com), including from the tesla car
 browser, without port forwarding or remote access.
 
 The plugin keeps one **outbound** connection from your server to the player's
