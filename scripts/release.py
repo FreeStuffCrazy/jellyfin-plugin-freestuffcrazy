@@ -107,6 +107,8 @@ def main():
             "timestamp": now,
             "version": version,
         }
+        if meta.get("imageUrl"):
+            plugin_meta["imageUrl"] = meta["imageUrl"]
         zip_path = out / f"{base}_{version}.zip"
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
             for artifact in meta["artifacts"]:
@@ -135,6 +137,8 @@ def main():
         "category": meta["category"],
         "versions": versions,
     }
+    if meta.get("imageUrl"):
+        entry["imageUrl"] = meta["imageUrl"]
     if args.previous and Path(args.previous).is_file():
         try:
             previous = json.loads(Path(args.previous).read_text())
