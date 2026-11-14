@@ -1,0 +1,76 @@
+name: Release
+
+# Push a tag like v0.1.0 to publish a release. Running this by hand (Actions >
+# Release > Run workflow) builds everything and uploads the zips as a workflow
+# artifact without publishing anything.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pyyaml
+      - name: Test
+        run: dotnet test tests/Jellyfin.Plugin.FreeStuffCrazy.Tests -c Release
+
+      - name: Work out the version
+        id: version
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v0.0.0-dryrun" >> "$GITHUB_OUTPUT"
+            echo "version=0.0.0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch the previous manifest
+        if: github.ref_type == 'tag'
+        run: |
+          # Keep older versions listed. A first release has none (404); any other
+          # failure stops the release rather than silently dropping them.
+          status=$(curl -sS -L -o previous-manifest.json -w '%{http_code}' \
+            "https://github.com/$GITHUB_REPOSITORY/releases/latest/download/manifest.json")
+          case "$status" in
+            200) ;;
+            404) rm -f previous-manifest.json ;;
+            *) echo "Unexpected HTTP $status fetching the previous manifest" >&2; exit 1 ;;
+          esac
+
+      - name: Build, zip and write the manifest
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python3 scripts/release.py \
+            --version "$VERSION" --tag "$TAG" --repo "$GITHUB_REPOSITORY" --out artifacts \
+            --previous previous-manifest.json \
+            --changelog "Release $TAG. Notes: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-${{ steps.version.outputs.tag }}
+          path: artifacts/
+
+      - name: Publish the release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: gh release create "$TAG" artifacts/*.zip artifacts/manifest.json --title "$TAG" --generate-notes

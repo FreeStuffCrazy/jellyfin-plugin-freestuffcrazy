@@ -1,0 +1,17 @@
+---
+name: "FreeStuffCrazy Player Connector"
+guid: "f0a67b55-b968-4ba2-9614-2428d2a24dd8"
+version: "0.1.0.0"
+targetAbi: "12.4.0.0"
+framework: "net10.0"
+owner: "FreeStuffCrazy"
+overview: "Watch this server from FreeStuffCrazy Player without opening ports."
+description: >
+  Keeps an outbound connection from this server to FreeStuffCrazy Player, so
+  its users can watch from a car or any browser without port forwarding or
+  remote access. Viewers still sign in with their own Jellyfin accounts.
+category: "General"
+artifacts:
+  - "Jellyfin.Plugin.FreeStuffCrazy.dll"
+changelog: >
+  First version.

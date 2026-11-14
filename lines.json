@@ -1,0 +1,6 @@
+[
+  { "jellyfin": "10.9.11", "targetAbi": "10.9.0.0" },
+  { "jellyfin": "10.10.7", "targetAbi": "10.10.0.0" },
+  { "jellyfin": "10.11.11", "targetAbi": "10.11.0.0" },
+  { "jellyfin": "12.4.0", "targetAbi": "12.4.0.0" }
+]

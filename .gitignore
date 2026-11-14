@@ -1,0 +1,16 @@
+bin/
+obj/
+artifacts/
+*.user
+.vs/
+.idea/
+TestResults/
+
+# Keys, secrets and build archives never belong here.
+.env
+.env.*
+*.pfx
+*.snk
+*.p12
+*.zip
+.DS_Store

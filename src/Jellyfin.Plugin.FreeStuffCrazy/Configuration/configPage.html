@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>FreeStuffCrazy Player Connector</title>
+</head>
+<body>
+    <div id="fscConnectorPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-button,emby-checkbox,emby-linkbutton">
+        <style>
+            #fscConnectorPage .fsc { max-width: 46em; }
+            #fscConnectorPage .fsc-intro { opacity: .85; margin: 0 0 1.5em; line-height: 1.5; }
+            #fscConnectorPage .fsc-card { background: rgba(127,127,127,.12); border: 1px solid rgba(127,127,127,.22); border-radius: .6em; padding: 1.1em 1.3em; margin: 0 0 1.2em; }
+            #fscConnectorPage .fsc-card h3 { margin: 0 0 .6em; font-size: 1.05em; font-weight: 600; }
+            #fscConnectorPage .fsc-card p { margin: .4em 0; line-height: 1.5; }
+            #fscConnectorPage .fsc-status { display: flex; align-items: center; gap: .7em; font-size: 1.15em; font-weight: 500; }
+            #fscConnectorPage .fsc-dot { width: .75em; height: .75em; border-radius: 50%; flex: none; background: #888; box-shadow: 0 0 0 .25em rgba(136,136,136,.2); }
+            #fscConnectorPage .fsc-dot.linked { background: #3ec46d; box-shadow: 0 0 0 .25em rgba(62,196,109,.22); }
+            #fscConnectorPage .fsc-dot.waiting { background: #f0b429; box-shadow: 0 0 0 .25em rgba(240,180,41,.22); }
+            #fscConnectorPage .fsc-dot.problem { background: #e5534b; box-shadow: 0 0 0 .25em rgba(229,83,75,.22); }
+            #fscConnectorPage .fsc-detail { opacity: .75; margin-top: .4em; }
+            #fscConnectorPage .fsc-code { font: 600 1.6em/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; user-select: all; }
+            #fscConnectorPage .fsc-row { display: flex; gap: .6em; align-items: center; flex-wrap: wrap; margin: .8em 0; }
+            #fscConnectorPage .fsc-row .emby-button, #fscConnectorPage .fsc-row .button-link { margin: 0; }
+            #fscConnectorPage .fsc-name { flex: 1 1 14em; min-width: 0; font: 600 1.35em/1.3 ui-monospace, Menlo, Consolas, monospace; padding: .45em .6em; border-radius: .3em; border: 1px solid rgba(127,127,127,.35); background: rgba(0,0,0,.15); color: inherit; }
+            #fscConnectorPage .fsc-small { font-size: .9em; opacity: .7; }
+            #fscConnectorPage .fsc-danger { margin-top: 2em; }
+        </style>
+        <div data-role="content">
+            <div class="content-primary fsc">
+                <h2 class="sectionTitle">FreeStuffCrazy Player Connector</h2>
+                <p class="fsc-intro">
+                    Lets the people who use this server watch it from FreeStuffCrazy Player, in a car or any browser,
+                    without opening a port or setting up remote access. Viewers still sign in with their own Jellyfin accounts.
+                </p>
+
+                <div class="fsc-card">
+                    <div class="fsc-status"><span id="fscDot" class="fsc-dot"></span><span id="fscStatus">Loading…</span></div>
+                    <div id="fscDetail" class="fsc-detail"></div>
+                </div>
+
+                <div id="fscPairing" class="fsc-card" style="display:none">
+                    <h3>Link this server</h3>
+                    <p>Open the linking page and click <strong>Link server</strong>. No FreeStuffCrazy Player account is needed: only an administrator can see this page, so opening its link is the proof.</p>
+                    <div class="fsc-row">
+                        <a id="fscPairingLink" is="emby-linkbutton" class="raised button-submit emby-button" target="_blank" rel="noopener" href="#">
+                            <span>Link this server</span>
+                        </a>
+                    </div>
+                    <p class="fsc-small">On another device, go to <span id="fscLinkHost">player.freestuffcrazy.com/link</span> and enter:</p>
+                    <div id="fscPairingCode" class="fsc-code"></div>
+                    <p id="fscExpires" class="fsc-small"></p>
+                </div>
+
+                <div id="fscName" class="fsc-card" style="display:none">
+                    <h3>Server name</h3>
+                    <p>To watch, people choose <strong>Sign in with Jellyfin</strong> in FreeStuffCrazy Player and enter this name. Share it with the people who use this server.</p>
+                    <div class="fsc-row">
+                        <input id="fscNameValue" class="fsc-name" type="text" readonly aria-label="Server name">
+                        <button id="fscCopy" is="emby-button" type="button" class="raised button-submit">
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <p id="fscCopied" class="fsc-small" aria-live="polite"></p>
+                </div>
+
+                <div class="verticalSection">
+                    <h3 class="sectionTitle">Settings</h3>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input id="fscEnabled" type="checkbox" is="emby-checkbox">
+                            <span>Connect this server to FreeStuffCrazy Player</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            Viewers reach Jellyfin through this connection, so Jellyfin sees them as local: its remote access
+                            setting and remote streaming bitrate limit don't apply to them. FreeStuffCrazy Player limits each
+                            of these streams to about 2 Mbps.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="fscDanger" class="fsc-danger" style="display:none">
+                    <button id="fscUnlink" is="emby-button" type="button" class="raised button-delete">
+                        <span>Unlink this server</span>
+                    </button>
+                    <div class="fieldDescription">Viewers lose access until the server is linked again, and it gets a new name.</div>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            (function () {
+                var page = document.getElementById('fscConnectorPage');
+                var $ = function (selector) { return page.querySelector(selector); };
+                // Jellyfin's button styles override the hidden attribute, so show and hide with display.
+                var show = function (selector, visible) { $(selector).style.display = visible ? '' : 'none'; };
+                var timer = null;
+                var expiresAt = null;
+                var labels = {
+                    Disabled: ['Turned off', ''],
+                    Connecting: ['Connecting to FreeStuffCrazy Player…', ''],
+                    WaitingForLink: ['Connected, waiting to be linked', 'waiting'],
+                    Linked: ['Linked', 'linked'],
+                    Offline: ['Not connected', 'problem'],
+                    UpdateRequired: ['This plugin needs an update', 'problem']
+                };
+
+                function api(method, path) {
+                    return ApiClient.ajax({ type: method, url: ApiClient.getUrl('FreeStuffCrazy/' + path), dataType: method === 'GET' ? 'json' : undefined });
+                }
+
+                function renderExpiry() {
+                    if (!expiresAt) { $('#fscExpires').textContent = ''; return; }
+                    var minutes = Math.max(0, Math.round((expiresAt - Date.now()) / 60000));
+                    $('#fscExpires').textContent = minutes > 0
+                        ? 'This code expires in ' + minutes + (minutes === 1 ? ' minute' : ' minutes') + '; a new one appears automatically.'
+                        : 'A new code is on its way.';
+                }
+
+                function render(s) {
+                    var label = labels[s.status] || [s.status, ''];
+                    $('#fscStatus').textContent = label[0];
+                    $('#fscDot').className = 'fsc-dot ' + label[1];
+                    var detail = s.message || '';
+                    if (s.status === 'Linked') {
+                        detail = (s.activeStreams ? s.activeStreams + (s.activeStreams === 1 ? ' request' : ' requests') + ' in progress.' : 'Ready for viewers.') + (detail ? ' ' + detail : '');
+                    }
+                    $('#fscDetail').textContent = detail;
+
+                    var pairing = s.status === 'WaitingForLink' && !!s.pairingUrl;
+                    show('#fscPairing', pairing);
+                    if (pairing) {
+                        $('#fscPairingLink').href = s.pairingUrl;
+                        $('#fscPairingCode').textContent = s.pairingCode || '';
+                        try {
+                            var url = new URL(s.pairingUrl);
+                            $('#fscLinkHost').textContent = url.host + url.pathname;
+                        } catch (e) { /* keep the default */ }
+                        expiresAt = s.pairingExpiresAt ? Date.parse(s.pairingExpiresAt) : null;
+                    } else {
+                        expiresAt = null;
+                    }
+                    renderExpiry();
+
+                    var name = s.linked && s.label ? s.label : '';
+                    show('#fscName', !!name);
+                    var nameInput = $('#fscNameValue');
+                    if (nameInput.value !== name) nameInput.value = name; // don't disturb a selection in progress
+
+                    $('#fscEnabled').checked = !!s.enabled;
+                    show('#fscDanger', !!s.linked);
+                }
+
+                function refresh() {
+                    return api('GET', 'Status').then(render).catch(function () {
+                        $('#fscStatus').textContent = 'Could not load the connector status.';
+                        $('#fscDot').className = 'fsc-dot problem';
+                    });
+                }
+
+                page.addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    refresh().finally(Dashboard.hideLoadingMsg);
+                    timer = setInterval(function () { refresh(); renderExpiry(); }, 3000);
+                });
+                page.addEventListener('pagehide', function () { clearInterval(timer); });
+
+                var nameInput = $('#fscNameValue');
+                nameInput.addEventListener('focus', function () { nameInput.select(); });
+                nameInput.addEventListener('click', function () { nameInput.select(); });
+
+                $('#fscCopy').addEventListener('click', function () {
+                    var note = $('#fscCopied');
+                    var done = function () { note.textContent = 'Copied.'; setTimeout(function () { note.textContent = ''; }, 3000); };
+                    var fallback = function () {
+                        // Plain http pages can't use the clipboard API.
+                        nameInput.focus();
+                        nameInput.select();
+                        var copied = false;
+                        try { copied = document.execCommand('copy'); } catch (e) { copied = false; }
+                        if (copied) done(); else note.textContent = 'Selected. Press Ctrl+C (or ⌘C) to copy.';
+                    };
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(nameInput.value).then(done, fallback);
+                    } else {
+                        fallback();
+                    }
+                });
+
+                $('#fscEnabled').addEventListener('change', function (e) {
+                    api('POST', 'Enabled?enabled=' + e.target.checked).then(refresh);
+                });
+
+                $('#fscUnlink').addEventListener('click', function () {
+                    if (!confirm('Unlink this server from FreeStuffCrazy Player? Viewers lose access until it is linked again, and it gets a new name.')) return;
+                    api('POST', 'Unlink').then(refresh);
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>
