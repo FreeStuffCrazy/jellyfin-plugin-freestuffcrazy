@@ -1,9 +1,10 @@
 # FreeStuffCrazy Player Connector for Jellyfin
 
 Watch your Jellyfin server in [FreeStuffCrazy Player](https://player.freestuffcrazy.com),
-including a Tesla's browser, with no port forwarding, remote access or SSL. The
-plugin makes one **outbound** connection from your server to the player's relay,
-and viewers still sign in with their own Jellyfin accounts.
+including in a Tesla, where a passenger can use it while the car is in motion, with
+no port forwarding, remote access or SSL. The plugin makes one **outbound**
+connection from your server to the player's relay, and viewers still sign in with
+their own Jellyfin accounts.
 
 Viewers' traffic, including sign-ins and media, passes through the relay, which
 can see it. See [Privacy and security](#privacy-and-security).
