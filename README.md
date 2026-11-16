@@ -1,66 +1,75 @@
 # FreeStuffCrazy Player Connector for Jellyfin
 
-A Jellyfin plugin that lets people watch your server from
-[FreeStuffCrazy Player](https://player.freestuffcrazy.com), including from the tesla car
-browser, without port forwarding or remote access.
+Watch your Jellyfin server in [FreeStuffCrazy Player](https://player.freestuffcrazy.com),
+including a Tesla's browser, with no port forwarding, remote access or SSL. The
+plugin makes one **outbound** connection from your server to the player's relay,
+and viewers still sign in with their own Jellyfin accounts.
 
-The plugin keeps one **outbound** connection from your server to the player's
-relay. Requests from signed-in viewers travel back over that connection, and the
-plugin forwards them to your own Jellyfin server and streams the answers back.
-The plugin needs no open port or remote-access setup, and viewers still sign in
-with their own Jellyfin accounts.
+Viewers' traffic, including sign-ins and media, passes through the relay, which
+can see it. See [Privacy and security](#privacy-and-security).
 
-## Using it
+## Install
 
-1. Install the plugin (see **Installing**) and restart Jellyfin.
-2. Open **Dashboard → Plugins → FreeStuffCrazy Player Connector**. When the
-   status reads *Connected, waiting to be linked*, click **Link this server**.
-   It opens the linking page; click **Link server** there. (To link from another
-   device, go to <https://player.freestuffcrazy.com/link> and enter the code the
-   plugin page shows. Codes expire after a few minutes and a new one appears
-   automatically.)
-3. No FreeStuffCrazy Player account is needed. Only a Jellyfin administrator can
-   see the plugin page, so opening its link is the proof that you own the server.
-4. The plugin page now shows your **server name**. Share it with the people who
-   use your server. In FreeStuffCrazy Player they choose **Sign in with
-   Jellyfin** and enter that name.
+Requires Jellyfin 10.9 or newer.
 
-**Unlink this server** disconnects it. Viewers lose access until you link it
-again, and the server gets a new name. To pause without unlinking, clear
-**Connect this server to FreeStuffCrazy Player**.
+1. In Jellyfin, go to **Dashboard → Plugins → Repositories → +** and add:
 
-The status line on the plugin page tells you where things stand: *Turned off*,
-*Connecting*, *Connected, waiting to be linked*, *Linked*, *Not connected*, or
-*This plugin needs an update* (the relay no longer supports this plugin version).
+   ```
+   https://github.com/FreeStuffCrazy/jellyfin-plugin-freestuffcrazy/releases/latest/download/manifest.json
+   ```
 
-## Installing
+2. Open **Catalog**, install **FreeStuffCrazy Player Connector** (under General),
+   and restart Jellyfin.
+3. Open **Dashboard → Plugins → FreeStuffCrazy Player Connector**. When the status
+   reads *Connected, waiting to be linked*, click **Link this server**, then
+   **Link server** on the page that opens. To link from another device, go to
+   <https://player.freestuffcrazy.com/link> and enter the code on the plugin page
+   (codes expire after a few minutes; a new one appears automatically).
+4. The plugin page now shows your **server name**. Give it to the people who use
+   your server. In FreeStuffCrazy Player they choose **Sign in with Jellyfin** and
+   enter that name.
 
-Once a release is published, add this repository in Jellyfin under **Dashboard →
-Plugins → Repositories → +**:
+Only a Jellyfin administrator can see the plugin page, so linking proves you own
+the server. No FreeStuffCrazy account is needed.
 
-```
-https://github.com/FreeStuffCrazy/jellyfin-plugin-freestuffcrazy/releases/latest/download/manifest.json
-```
-
-Then open **Catalog**, find **FreeStuffCrazy Player Connector** under General,
-install it, and restart Jellyfin. Or build it yourself (see **Building**).
-Each release has one zip per Jellyfin line; Jellyfin picks the right one for your
-server.
+To stop, click **Unlink this server** (viewers lose access, and linking again
+gives a new name), or clear **Connect this server to FreeStuffCrazy Player** to
+pause. The status line shows where things stand: *Turned off*, *Connecting*,
+*Connected, waiting to be linked*, *Linked*, *Not connected*, or *This plugin needs
+an update* (the relay no longer supports this version).
 
 ## Compatibility
 
-Each Jellyfin release line runs on its own .NET version, so releases contain a
-build per line:
+Jellyfin 12.4 and newer (.NET 10), 10.11 (.NET 9), and 10.9 to 10.10 (.NET 8).
+Each release has one zip per line, and Jellyfin picks the right one.
 
-| Jellyfin | .NET |
-|---|---|
-| 12.4 and newer | net10.0 |
-| 10.11.x | net9.0 |
-| 10.9.x and 10.10.x | net8.0 |
+## Privacy and security
 
-## Building
+- **The relay sees your viewers' traffic.** Requests and responses pass through
+  the relay, which ends the encrypted connection to your server. That includes
+  sign-in requests, Jellyfin access tokens, and the media itself. Use this plugin
+  only if you are comfortable with that.
+- **What the plugin tells the relay:** your server's name and ID, its Jellyfin
+  version, the plugin version, and the link credential once linked.
+- **Jellyfin sees relayed requests as local,** so its remote-access setting and
+  remote bitrate limit don't apply. The player limits each stream to about 2 Mbps
+  on its side.
+- **The plugin does not trust the relay.** It forwards only the endpoints the
+  player uses (sign-in, browsing, playback, watch state), only to its own server,
+  and never follows redirects. Everything else is refused, including Jellyfin's
+  administration endpoints. See
+  [`ForwardPolicy.cs`](src/Jellyfin.Plugin.FreeStuffCrazy/Relay/ForwardPolicy.cs)
+  and [`PROTOCOL.md`](PROTOCOL.md). The link credential is stored in the plugin's
+  configuration file, readable only by the Jellyfin service account, and the relay
+  rotates it on every connection.
+- To report a vulnerability, see [`SECURITY.md`](SECURITY.md).
 
-You need the .NET SDK for the line you are building for.
+## Building and development
+
+You need the .NET SDK for the line you are building for. Installing a release from
+the catalog is the supported route; to try your own build, copy
+`Jellyfin.Plugin.FreeStuffCrazy.dll` into its own new folder in Jellyfin's plugins
+directory and restart Jellyfin.
 
 ```sh
 # Jellyfin 12.4 (the default)
@@ -68,53 +77,15 @@ dotnet build src/Jellyfin.Plugin.FreeStuffCrazy -c Release
 
 # Another line: pass its Jellyfin version
 dotnet build src/Jellyfin.Plugin.FreeStuffCrazy -c Release -p:JellyfinVersion=10.11.11
-```
 
-To try your own build, copy `Jellyfin.Plugin.FreeStuffCrazy.dll` into its own new
-folder inside your Jellyfin plugins directory and restart Jellyfin. Installing a
-release from the catalog is the supported route.
-
-The tests need the .NET 10 SDK:
-
-```sh
+# Tests (need the .NET 10 SDK)
 dotnet test tests/Jellyfin.Plugin.FreeStuffCrazy.Tests
 ```
 
-## What it can and can't do
-
-The plugin does not trust the relay. It forwards only the Jellyfin endpoints the
-player uses (sign-in, browsing, playback, and watch state), only to its own
-server, and never follows redirects. Everything else is refused, including
-Jellyfin's administration endpoints. The exact list is in
-[`ForwardPolicy.cs`](src/Jellyfin.Plugin.FreeStuffCrazy/Relay/ForwardPolicy.cs)
-and the wire protocol is documented in [`PROTOCOL.md`](PROTOCOL.md).
-
-The link credential is stored in the plugin's configuration file, which only the
-Jellyfin service account can read, and the relay rotates it on every connection.
-
-## Privacy and security
-
-- **The relay sees your viewers' traffic.** Viewers' requests and your server's
-  responses pass through FreeStuffCrazy Player's relay, which ends the encrypted
-  connection to your server. That includes sign-in requests, Jellyfin access
-  tokens, and the media itself. Use this plugin only if you are comfortable with
-  that.
-- **What the plugin tells the relay about your server:** its name and ID, its
-  Jellyfin version, and the plugin version, plus the link credential once
-  linked.
-- **Jellyfin sees relayed requests as local.** They reach Jellyfin from the same
-  machine, so Jellyfin treats viewers as local: its remote-access setting and
-  remote streaming bitrate limit don't apply to them. FreeStuffCrazy Player
-  limits each of these streams to about 2 Mbps on its side. This is also why only
-  a fixed list of endpoints is forwarded; see [`PROTOCOL.md`](PROTOCOL.md).
-- To report a vulnerability, see [`SECURITY.md`](SECURITY.md).
-
-## Development
-
-For testing against a relay on your own network, set the
-`FREESTUFFCRAZY_DEV_RELAY` environment variable (or `DevRelayUrl` in the plugin's
-configuration file) to a `ws://` address. It is honored only for this machine or
-private network addresses, never for a public host.
+To test against a relay on your own network, set the `FREESTUFFCRAZY_DEV_RELAY`
+environment variable (or `DevRelayUrl` in the plugin's configuration file) to a
+`ws://` address. It is honored only for this machine or private network addresses,
+never for a public host.
 
 ## License
 
